@@ -1,0 +1,294 @@
+/* MENU DROPDOWN */
+.menu-main-nav ul, .menu-main-nav ul.menubox2
+{
+	/*
+	background-color: #fffef9;
+	border-top:5px solid #977663 !important;	
+	*/
+    display: none;
+    left: 0px;
+    position: absolute;
+    top: 30px;
+    z-index: 999;
+	
+	background: url(../images/menu_dropdown.jpg) no-repeat;
+	border-top:none;
+	border-left:1px solid #977663;
+	border-right:1px solid #977663;
+	border-bottom:2px solid #977663;
+	font-size: 12px;
+	color:#977663;
+}
+
+.sub_nav {
+	/*
+	position: absolute;
+	width: 958px;
+	height: 168px;
+	z-index: 999;
+	top: 160px;
+	left:0;
+	display: none;
+	*/
+	background: url(../images/menu_dropdown.jpg) no-repeat;
+	border-top:none;
+	border-left:1px solid #977663;
+	border-right:1px solid #977663;
+	border-bottom:2px solid #977663;
+	font-size: 12px;
+	color:#977663;
+}
+
+	.sub_nav_left
+	{
+		float:left;
+		background: url(../images/bg_sub_left.png) no-repeat 25px center;
+		width: 505px;
+		height: 150px;
+		padding: 10px 0 10px 55px;
+		text-align:left;
+		display:block;
+	}
+	
+	.sub_nav_right
+	{
+		float:left;
+		background: url(../images/bg_sub_right.png) no-repeat 25px center;
+		width: 335px;
+		height: 150px;
+		padding: 10px 0 10px 55px;
+		text-align:left;
+		display:block;
+	}
+
+.sub_nav_right input[type="text"]
+{
+	width: 103px;
+	height: 10px;
+	border: 1px solid #977663;
+	padding: 5px;
+	margin-right: 2px;
+}	
+	
+.text-tgl
+{
+	width: 103px;
+	height: 10px;
+	border: 1px solid #977663;
+	padding: 5px;
+	margin-right: 2px;
+}
+
+.shadow-bottom, .shadow2
+{
+	position:absolute;
+	bottom:-5px;
+}
+
+.clear
+{
+	height:0;
+	padding:0;
+	margin:0;
+	clear:both;
+	font-size:0;
+}
+
+table.left-table tr td
+{
+	padding:2px;
+}
+
+.rates-copy p
+{
+	font-size:12px;
+}
+
+.rates-copy ul, .rates-copy ul li
+{
+	list-style: square;
+	margin: 0 0 0 10px;
+	padding: 0 0 5px 0;
+}
+
+.reserv-step2
+{
+	margin: 10px 10px 10px 20px; width: 520px;
+}
+
+.reserv-step2 table tr td
+{
+	vertical-align:top;
+	padding:5px 2px;
+}
+
+.offers-box
+{
+	overflow:auto;
+	height:450px;
+	margin:0 5px 0 0;
+	padding:0 10px 0 0;
+}
+
+.offers1
+{
+	margin: 0 0 0 20px;
+}
+
+.button-offers a
+{
+	font-weight:bold;
+	color:#575755;
+	font-size:12px;
+	text-decoration:none;
+}
+
+.button-offers a:hover
+{
+	font-weight:bold;
+	color:#977663;
+	font-size:12px;
+	text-decoration:none;
+} 
+
+.offers-button
+{
+	float: right;
+	text-align: center;
+	width:145px;
+}
+
+.right-reservation
+{
+	width:275px;
+}
+
+.start-date, .end-date
+{
+	margin-right:0 !important;
+}
+
+.menu-main-nav li.with-bg:hover a
+{
+	background: #977663 url(../images/bg_menusegitiga2.png) bottom right no-repeat;
+	color: #ffffff;
+}
+
+.shadow-bottom, .shadow2
+{
+	clear:both;
+	position:relative;
+	bottom:-5px;
+}
+
+.table3-2 table tr td
+{
+	vertical-align:top;
+}
+
+.form-item, .form-actions
+{
+	margin-top:0;
+	margin-bottom:1em;
+}
+
+#container
+{
+	padding:0;
+}
+
+#slides
+{
+	top:5px;
+}
+
+.rates-reservation .reservation
+{
+	height: 32px;
+}
+
+.kalender
+{
+	width:450px;
+}
+
+.kalender1, .kalender2
+{
+	float:left;
+	padding-right:10px;
+}
+
+
+.offers {
+	float: left;
+	width: 600px;
+	margin-top: 20px;
+	height: 510px;
+}
+
+.offers-tittle {
+	height: 30px;
+	margin-right: 20px;
+	margin-left: 20px;
+	font-size: 16px;
+}
+.offers-picture {
+	float: left;
+	height: 50px;
+	margin-right: 15px;
+	margin-left: 0;
+	width: 100px;
+}
+.offers-text {
+	float: left;
+	min-height: 55px;
+	font-size: 12px;
+	width: 265px;
+	padding: 0 5px;
+	-moz-background-clip: border;
+}
+.button-offers {
+	clear:both;
+	margin-left: 0;
+	font-size: 10px;
+	margin-bottom: 10px;
+}
+
+.package-content {
+float: left;
+width: 570px;
+height: 340px;
+overflow: auto;
+margin-right: 20px;
+padding-right: 5px;
+}
+
+#line-package {
+border-top: 2px dotted #fff;
+background: #ecddd1;
+margin: 0 20px 0 0;
+}
+
+
+.package-p
+{
+	margin-left:0;
+}
+
+.package-table
+{
+	margin-left:0;
+}
+
+.package-table table
+{
+	border-top:1px solid #ebe2dd;
+}
+
+.package-table table tr td
+{
+	vertical-align:top;
+	margin:0;
+	padding:5px;
+	border-bottom:1px solid #ebe2dd;
+}
