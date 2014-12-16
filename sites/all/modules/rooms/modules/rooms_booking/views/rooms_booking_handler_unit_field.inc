@@ -12,7 +12,6 @@ class rooms_booking_handler_unit_field extends views_handler_field {
     parent::construct();
 
     $this->additional_fields['unit_id'] = 'unit_id';
-    //$this->additional_fields['type'] = 'type';
   }
 
   function option_definition() {
@@ -41,6 +40,9 @@ class rooms_booking_handler_unit_field extends views_handler_field {
   function render($values) {
     $unit_id = $values->{$this->aliases['unit_id']};
     $unit = rooms_unit_load($unit_id);
+    if (!is_object($unit)) {
+      return '';
+    }
 
     $text = !empty($this->options['text']) ? $this->options['text'] : $unit->name;
 

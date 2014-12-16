@@ -4,9 +4,9 @@
  * @file
  * Rooms editing UI.
  *
- * We make very little use of the EntityAPI interface for this - preferring instead to use
- * views. That offers more flexibility to change a UI that will, more often than not,
- * be end-user facing.
+ * We make very little use of the EntityAPI interface for this - preferring
+ * instead to use views. That offers more flexibility to change a UI that will,
+ * more often than not, be end-user facing.
  */
 
 /**
@@ -19,66 +19,75 @@ class RoomsUnitUIController extends EntityDefaultUIController {
    * parent class hook_menu() is optimized for entity type administration.
    */
   public function hook_menu() {
-
     $items = array();
     $id_count = count(explode('/', $this->path));
     $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
 
     $items[$this->path] = array(
       'title' => 'Bookable Units',
-      'description' => 'Add edit and update bookable units (e.g. rooms at a hotel or a villa).',
+      'description' => 'Add, edit, and update bookable units.',
       'page callback' => 'system_admin_menu_block_page',
-      'access arguments' => array('access administration pages'),
+      'access arguments' => array('access bookable units overview'),
       'file path' => drupal_get_path('module', 'system'),
       'file' => 'system.admin.inc',
-      //'type' => MENU_NORMAL_ITEM,
       'weight' => 10,
     );
 
-    // Change the add page menu to multiple types of entities
+    // Change the add page menu to multiple types of entities.
     $items[$this->path . '/add'] = array(
       'title' => 'Add a Bookable Unit',
-      'description' => 'Add a new Unit',
+      'description' => 'Create a new bookable unit.',
       'page callback'  => 'rooms_unit_add_page',
-      'access callback'  => 'rooms_unit_access',
-      'access arguments' => array('edit'),
+      'access callback'  => '_rooms_unit_add_access',
       'type' => MENU_NORMAL_ITEM,
       'weight' => 20,
       'file' => 'rooms_unit.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module'])
-
+      'file path' => drupal_get_path('module', $this->entityInfo['module']),
     );
-
 
     // Add menu items to add each different type of room.
     foreach (rooms_unit_get_types() as $type) {
       $items[$this->path . '/add/' . $type->type] = array(
-        'title' => 'Add ' . $type->label,
+        'title' => 'Add @unit_type_label unit',
+        'title arguments' => array('@unit_type_label' => $type->label),
         'page callback' => 'rooms_unit_create_form_wrapper',
         'page arguments' => array($type->type),
         'access callback' => 'rooms_unit_access',
-        'access arguments' => array('edit', 'edit ' . $type->type),
+        'access arguments' => array('create', rooms_unit_create(array('type' => $type->type, 'uid' => 0))),
         'file' => 'rooms_unit.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module'])
+        'file path' => drupal_get_path('module', $this->entityInfo['module']),
       );
     }
 
-    // Loading and editing Rooms entities
+    // Loading and editing Rooms entities.
     $items[$this->path . '/unit/' . $wildcard] = array(
-      'page callback' => 'rooms_unit_form_wrapper',
+      'title callback' => 'rooms_unit_page_title',
+      'title arguments' => array($id_count + 1),
+      'page callback' => 'rooms_unit_page_view',
       'page arguments' => array($id_count + 1),
       'access callback' => 'rooms_unit_access',
-      'access arguments' => array('edit', $id_count + 1),
-      'weight' => 0,
+      'access arguments' => array('view', $id_count + 1),
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-      'file' => 'rooms_unit.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
-    $items[$this->path . '/unit/' . $wildcard . '/edit'] = array(
-      'title' => 'Edit',
+
+    $items[$this->path . '/unit/' . $wildcard . '/view'] = array(
+      'title' => 'View',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    );
+
+    $items[$this->path . '/unit/' . $wildcard . '/edit'] = array(
+      'title' => 'Edit',
+      'page callback' => 'rooms_unit_form_wrapper',
+      'page arguments' => array($id_count + 1),
+      'access callback' => 'rooms_unit_access',
+      'access arguments' => array('update', $id_count + 1),
+      'weight' => 0,
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      'file' => 'rooms_unit.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']),
     );
 
     $items[$this->path . '/unit/' . $wildcard . '/delete'] = array(
@@ -86,17 +95,16 @@ class RoomsUnitUIController extends EntityDefaultUIController {
       'page callback' => 'rooms_unit_delete_form_wrapper',
       'page arguments' => array($id_count + 1),
       'access callback' => 'rooms_unit_access',
-      'access arguments' => array('edit', $id_count + 1),
+      'access arguments' => array('delete', $id_count + 1),
       'type' => MENU_LOCAL_TASK,
       'context' => MENU_CONTEXT_INLINE,
       'weight' => 10,
       'file' => 'rooms_unit.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module'])
+      'file path' => drupal_get_path('module', $this->entityInfo['module']),
     );
 
-    // Menu item for viewing rooms
+    // Menu item for viewing rooms.
     $items['unit/' . $wildcard] = array(
-      //'title' => 'Title',
       'title callback' => 'rooms_unit_page_title',
       'title arguments' => array(1),
       'page callback' => 'rooms_unit_page_view',
@@ -108,10 +116,9 @@ class RoomsUnitUIController extends EntityDefaultUIController {
     return $items;
   }
 
-
   /**
-   * Create the markup for the add Bookable Unit Entities page within the class
-   * so it can easily be extended/overriden.
+   * Creates the markup for the add Bookable Unit Entities page within the class
+   * so it can easily be extended/overridden.
    */
   public function addPage() {
     $item = menu_get_item();
@@ -121,46 +128,53 @@ class RoomsUnitUIController extends EntityDefaultUIController {
       $item = array_shift($content);
       drupal_goto($item['href']);
     }
-    return theme('rooms_unit_add_list', array('content' => $content));
+    return array(
+      '#theme' => 'rooms_unit_add_list',
+      '#content' => $content,
+    );
   }
 
 }
-
 
 /**
  * Form callback wrapper: edit a Bookable Unit.
  *
  * @param $unit
- *   The  RoomsUnit object being edited by this form.
+ *   The RoomsUnit object being edited by this form.
  *
  * @see rooms_unit_edit_form()
  */
 function rooms_unit_form_wrapper($unit) {
   // Add the breadcrumb for the form's location.
   rooms_unit_set_breadcrumb();
+  drupal_set_title(t('Edit @unit_name', array('@unit_name' => $unit->name)));
+  $unit->date = format_date($unit->created, 'custom', 'Y-m-d H:i:s O');
+  $account = user_load($unit->uid);
+  $unit->author_name = isset($account->name) ? $account->name : '';
   return drupal_get_form('rooms_unit_edit_form', $unit);
 }
 
 /**
  * Form callback wrapper: create a Unit.
  *
- * @param $unit
- *   The Unit object being edited by this form.
- *
- * @see rooms_unit_edit_form()
+ * @param $type
+ *   The Unit type for the unit to be created.
  */
 function rooms_unit_create_form_wrapper($type) {
+  global $user;
   // Add the breadcrumb for the form's location.
   rooms_unit_set_breadcrumb();
-  $unit = rooms_unit_create(array('type' => $type));
+  $unit = rooms_unit_create(array('type' => $type, 'uid' => $user->uid));
+  $unit->created = REQUEST_TIME;
+  $unit->author_name = $user->name;
+  $unit->status = 1;
   return drupal_get_form('rooms_unit_edit_form', $unit);
 }
-
 
 /**
  * Form callback wrapper: delete a unit.
  *
- * @param $unit
+ * @param RoomsUnit $unit
  *   The unit object being edited by this form.
  *
  * @see rooms_unit_edit_form()
@@ -171,132 +185,236 @@ function rooms_unit_delete_form_wrapper($unit) {
   return drupal_get_form('rooms_unit_delete_form', $unit);
 }
 
-
 /**
  * Form callback: create or edit a unit.
  *
- * @param $unit
+ * @param RoomsUnit $unit
  *   The RoomUnit object to edit or for a create form an empty unit object
- *     with only a unit type defined.
+ *   with only a unit type defined.
  */
 function rooms_unit_edit_form($form, &$form_state, $unit) {
-  
+  $form['#attributes']['class'][] = 'rooms-management-form rooms-unit-edit-form';
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rooms_unit') . '/css/rooms_unit.css');
+
   // Add the default field elements.
   $form['name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Bookable Unit Name'),
+    '#title' => t('Unit name'),
     '#default_value' => isset($unit->name) ? $unit->name : '',
     '#maxlength' => 255,
     '#required' => TRUE,
-    '#weight' => -5,
+    '#weight' => -99,
   );
 
   $form['base_price'] = array(
     '#type' => 'textfield',
-    '#title' => t('Unit Base Price'),
+    '#title' => t('Base price'),
     '#default_value' => isset($unit->base_price) ? $unit->base_price : '',
     '#size' => '5',
-    '#description' => 'Base price is per unit per night',
+    '#field_suffix' => t('Per unit per night'),
     '#maxlength' => 10,
+    '#weight' => -98,
   );
 
-  $form['bookable'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Bookable'),
-    '#description' => t('To remove unit from bookable units uncheck - this will not alter availability states but remove the unit from any searches.'),
-    '#default_value' => isset($unit->bookable) ? $unit->bookable : 1,
+  $form['guest_capacity'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Sleeping capacity'),
+    '#tree' => FALSE,
+    '#weight' => -97,
   );
 
-  $form['min_sleeps'] = array(
+  $form['guest_capacity']['min_sleeps'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#default_value' => isset($unit->min_sleeps) ? $unit->min_sleeps : 1,
-    '#field_prefix' => 'Min: ',
-    '#title' => t('Person sleeps'),
+    '#field_suffix' => t('Person minimum'),
   );
 
-  $form['max_sleeps'] = array(
+  $form['guest_capacity']['max_sleeps'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#default_value' => isset($unit->max_sleeps) ? $unit->max_sleeps : 1,
-    '#field_prefix' => 'Max: ',
+    '#field_suffix' => t('Person maximum'),
+    '#description' => t('The total number of guests (adults and children) allowed in this unit.'),
   );
 
-  $form['min_children'] = array(
+  $form['child_capacity'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Child capacity'),
+    '#tree' => FALSE,
+    '#weight' => -96,
+  );
+
+  $form['child_capacity']['min_children'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#default_value' => isset($unit->min_children) ? $unit->min_children : 0,
-    '#field_prefix' => 'Min: ',
-    '#title' => t('Children sleeps'),
+    '#field_suffix' => t('Child minimum'),
   );
 
-  $form['max_children'] = array(
+  $form['child_capacity']['max_children'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#default_value' => isset($unit->max_children) ? $unit->max_children : 0,
-    '#field_prefix' => 'Max: ',
+    '#field_suffix' => t('Child maximum'),
+    '#description' => t('The number of children allowed in this unit.'),
   );
 
-  $form['default_state'] = array(
-    '#type' => 'select',
-    '#title' => t('Bookable Unit Default State'),
-    '#options' => array(
-      ROOMS_NOT_AVAILABLE => 'Unavailable',
-      ROOMS_AVAILABLE => 'Available',
-      ROOMS_ON_REQUEST => 'Available on Request',
-      ROOMS_ANON_BOOKED => 'Anonymous Booking'
-    ),
-    '#default_value' => isset($unit->default_state) ? $unit->default_state : 1,
-    '#description' => t('Choose what state to put the unit in for the dates chosen above'),
+  $form['data'] = array(
+    '#tree' => TRUE,
+    '#weight' => -95,
   );
-
-  $form['data']['#tree'] = TRUE;
 
   $form['data']['bed_arrangement'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Bed Arrangement'),
+    '#title' => t('Bed arrangement'),
   );
 
   $form['data']['bed_arrangement']['singles'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#default_value' => isset($unit->data['bed_arrangement']['singles']) ? $unit->data['bed_arrangement']['singles'] : '',
-    '#title' => t('Single Beds'),
+    '#field_suffix' => t('Single beds'),
   );
 
   $form['data']['bed_arrangement']['doubles'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#default_value' => isset($unit->data['bed_arrangement']['doubles']) ? $unit->data['bed_arrangement']['doubles'] : '',
-    '#title' => t('Double Beds'),
+    '#field_suffix' => t('Double beds'),
   );
 
-  // If we are creating a new booking unit
+  // Add the field related form elements.
+  $form_state['rooms_unit'] = $unit;
+  field_attach_form('rooms_unit', $unit, $form, $form_state);
+
+  $form['additional_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#weight' => 99,
+  );
+
+  // Unit availability information for administrators.
+  $form['availability'] = array(
+    '#type' => 'fieldset',
+    '#group' => 'additional_settings',
+    '#title' => t('Status'),
+    '#tree' => FALSE,
+    '#weight' => 80,
+    '#attributes' => array(
+      'class' => array('unit-form-availability '),
+    ),
+    '#attached' => array(
+      'js' => array(drupal_get_path('module', 'rooms_unit') . '/js/rooms_unit.js'),
+    ),
+  );
+
+  $form['availability']['bookable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Bookable'),
+    '#description' => t('Uncheck this to temporarily prevent the unit from being booked or appearing in any searches without affecting the scheduled availability on the calendar.'),
+    '#default_value' => isset($unit->bookable) ? $unit->bookable : 1,
+  );
+
+  $state_options = rooms_unit_state_options();
+  $form['availability']['default_state'] = array(
+    '#type' => 'select',
+    '#title' => t('Default availability'),
+    '#options' => $state_options,
+    '#default_value' => isset($unit->default_state) ? $unit->default_state : 1,
+    '#description' => t('Choose what state to leave the unit in by default.'),
+  );
+
+  // Unit author information for administrators.
+  $form['author'] = array(
+    '#type' => 'fieldset',
+    '#access' => user_access('administer bookable units'),
+    '#title' => t('Authoring information'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('unit-form-author'),
+    ),
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'rooms_unit') . '/js/rooms_unit.js',
+        array(
+          'type' => 'setting',
+          'data' => array('anonymous' => variable_get('anonymous', t('Anonymous'))),
+        ),
+      ),
+    ),
+    '#weight' => 90,
+  );
+
+  $form['author']['author_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Authored by'),
+    '#maxlength' => 60,
+    '#autocomplete_path' => 'user/autocomplete',
+    '#default_value' => !empty($unit->author_name) ? $unit->author_name : '',
+    '#weight' => -1,
+    '#description' => t('Leave blank for %anonymous.', array('%anonymous' => variable_get('anonymous', t('Anonymous')))),
+  );
+
+  $form['author']['date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Authored on'),
+    '#maxlength' => 25,
+    '#description' => t('Format: %time. The date format is YYYY-MM-DD and %timezone is the time zone offset from UTC. Leave blank to use the time of form submission.', array('%time' => !empty($unit->date) ? date_format(date_create($unit->date), 'Y-m-d H:i:s O') : format_date($unit->created, 'custom', 'Y-m-d H:i:s O'), '%timezone' => !empty($unit->date) ? date_format(date_create($unit->date), 'O') : format_date($unit->created, 'custom', 'O'))),
+    '#default_value' => !empty($unit->date) ? $unit->date : '',
+  );
+
+  // Unit publishing options for administrators.
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#access' => user_access('administer bookable units'),
+    '#title' => t('Publishing options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('unit-form-published'),
+    ),
+    '#attached' => array(
+      'js' => array(drupal_get_path('module', 'rooms_unit') . '/js/rooms_unit.js'),
+    ),
+    '#weight' => 95,
+  );
+
+  $form['options']['status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Published'),
+    '#default_value' => $unit->status,
+  );
+
+  // If we are creating a new booking unit, bulk creation info.
   if ($unit->unit_id == '') {
     $form['multi'] = array(
       '#type' => 'fieldset',
+      '#group' => 'additional_settings',
       '#title' => t('Create multiple units'),
-      '#description' => t('Create multiple booking units allows you to quickly create the number of
-                          required units that all have the same configutation - you can still personalise
-                          each later on.'),
+      '#description' => t('Save time by creating multiple bookable units at once all containing the settings above. You can still personalise each one later on.'),
+      '#weight' => 85,
+      '#attributes' => array(
+        'class' => array('unit-form-multiple'),
+      ),
+      '#attached' => array(
+        'js' => array(drupal_get_path('module', 'rooms_unit') . '/js/rooms_unit.js'),
+      ),
     );
 
     $form['multi']['multiple'] = array(
       '#type' => 'textfield',
       '#size' => 5,
       '#default_value' => 1,
-      '#title' => t('How many booking units like this should we create'),
+      '#title' => t('How many units should we create'),
     );
   }
 
-  // Add the field related form elements.
-  $form_state['rooms_unit'] = $unit;
-  field_attach_form('rooms_unit', $unit, $form, $form_state);
-
   $form['actions'] = array(
-    '#type' => 'container',
-    '#attributes' => array('class' => array('form-actions')),
-    '#weight' => 400,
+    '#type' => 'actions',
+    '#tree' => FALSE,
   );
 
   // We add the form's #submit array to this button along with the actual submit
@@ -313,7 +431,7 @@ function rooms_unit_edit_form($form, &$form_state, $unit) {
     '#submit' => $submit + array('rooms_unit_edit_form_submit'),
   );
 
-  if (!empty($unit->name)) {
+  if (!empty($unit->name) && rooms_unit_access('delete', $unit)) {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete Unit'),
@@ -329,9 +447,8 @@ function rooms_unit_edit_form($form, &$form_state, $unit) {
   return $form;
 }
 
-
 /**
- * Form API validate callback for the booking unit form
+ * Form API validate callback for the booking unit form.
  */
 function rooms_unit_edit_form_validate(&$form, &$form_state) {
   $unit = $form_state['rooms_unit'];
@@ -339,16 +456,15 @@ function rooms_unit_edit_form_validate(&$form, &$form_state) {
   // Notify field widgets to validate their data.
   field_attach_form_validate('rooms_unit', $unit, $form, $form_state);
 
-  // Validate price field
+  // Validate price field.
   if (!empty($form_state['values']['base_price']) && !is_numeric($form_state['values']['base_price'])) {
-    form_set_error('Base price error', t('%name: you must enter a numeric value for the price.', array('%name' => 'Base Price')));
+    form_set_error('Base price error', t('%name: you must enter a numeric value for the price.', array('%name' => t('Base price'))));
   }
 
-  if (!empty($form_state['values']['multiple']) && !is_numeric($form_state['values']['multiple'])) {
-    form_set_error('Multiple Rooms Error', t('%name: you must enter at least 1 as the number of multiple rooms.', array('%name' => 'Multiple Rooms')));
+  if (!empty($form_state['values']['multiple']) && (!is_numeric($form_state['values']['multiple'])|| $form_state['values']['multiple'] < 1)) {
+    form_set_error('Multiple units error', t('%name: you must enter at least 1 as the number of multiple units.', array('%name' => t('Multiple units'))));
   }
 }
-
 
 /**
  * Form API submit callback for the Unit form.
@@ -356,40 +472,49 @@ function rooms_unit_edit_form_validate(&$form, &$form_state) {
  * @todo remove hard-coded link
  */
 function rooms_unit_edit_form_submit(&$form, &$form_state) {
-
-  $multiple = 1;
   $units = array();
 
   if ($form_state['rooms_unit']->unit_id == '') {
     $multiple = $form_state['values']['multiple'];
 
     $name = $form_state['values']['name'];
-    for ($i = 1; $i <= $multiple ; $i++ ) {
+    for ($i = 1; $i <= $multiple; $i++) {
       $units[$i] = rooms_unit_create(array('type' => $form_state['rooms_unit']->type));
       $form_state['rooms_unit'] = $units[$i];
-      if ($i>1) {
+      if ($i > 1) {
         $form_state['values']['name'] = $name . ' - ' . $i;
       }
 
       $units[$i] = entity_ui_controller('rooms_unit')->entityFormSubmitBuildEntity($form, $form_state);
 
       // Add in created and changed times.
-      if ($units[$i]->is_new = isset($units[$i]->is_new) ? $units[$i]->is_new : 0) {
-        $units[$i]->created = time();
-      }
+      $units[$i]->is_new = isset($units[$i]->is_new) ? $units[$i]->is_new : 0;
 
       $units[$i]->changed = time();
     }
   }
   else {
-    $units[0] =  $form_state['rooms_unit'];
+    $units[0] = $form_state['rooms_unit'];
     $units[0] = entity_ui_controller('rooms_unit')->entityFormSubmitBuildEntity($form, $form_state);
     $units[0]->changed = time();
   }
 
   foreach ($units as $unit) {
+
+    if (isset($unit->author_name)) {
+      if ($account = user_load_by_name($unit->author_name)) {
+        $unit->uid = $account->uid;
+      }
+      else {
+        $unit->uid = 0;
+      }
+    }
+
+    $unit->created = !empty($unit->date) ? strtotime($unit->date) : REQUEST_TIME;
     $unit->save();
+    drupal_set_message(t('Bookable unit @name saved', array('@name' => $unit->name)));
   }
+
   $form_state['redirect'] = 'admin/rooms/units';
 }
 
@@ -402,12 +527,11 @@ function rooms_unit_form_submit_delete(&$form, &$form_state) {
   $form_state['redirect'] = 'admin/rooms/units/unit/' . $form_state['rooms_unit']->unit_id . '/delete';
 }
 
-
 /**
  * Form callback: confirmation form for deleting a unit.
  *
  * @param $unit
- *   The unit to delete
+ *   The unit to delete.
  *
  * @see confirm_form()
  */
@@ -442,10 +566,8 @@ function rooms_unit_delete_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/rooms/units';
 }
 
-
-
 /**
- * Page to add Rooms
+ * Page to add Rooms.
  *
  * @todo Pass this through a proper theme function
  */
@@ -454,9 +576,8 @@ function rooms_unit_add_page() {
   return $controller->addPage();
 }
 
-
 /**
- * Displays the list of available room types for orom creation.
+ * Displays the list of available room types for room creation.
  *
  * @ingroup themeable
  */
@@ -482,7 +603,6 @@ function theme_rooms_unit_add_list($variables) {
 
   return $output;
 }
-
 
 /**
  * Sets the breadcrumb for administrative rooms pages.

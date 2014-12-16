@@ -5,8 +5,8 @@
  * A basic template for room entities
  *
  * Available variables:
- * - $content: An array of comment items. Use render($content) to print them all, or
- *   print a subset such as render($content['field_example']). Use
+ * - $content: An array of comment items. Use render($content) to print them
+ *   all, or print a subset such as render($content['field_example']). Use
  *   hide($content['field_example']) to temporarily suppress the printing of a
  *   given element.
  * - $title: The name of the room
@@ -40,7 +40,7 @@
       unset ($content['state']);
       unset ($content['type']);
       unset ($content['sleeps']);
-      unset ($content['Bed Configuration']);
+      unset ($content['bed_arrangement']);
       print render($content);
     ?>
   </div>

@@ -7,35 +7,36 @@ Drupal.behaviors.rooms_availability = {
   attach: function(context) {
 
     // Current month is whatever comes through -1 since js counts months starting from 0
-    currentmonth = parseInt(Drupal.settings.roomsAvailability.currentMonth)-1;
-    currentyear = parseInt(Drupal.settings.roomsAvailability.currentYear);
+    currentMonth = Drupal.settings.roomsCalendar.currentMonth - 1;
+    currentYear = Drupal.settings.roomsCalendar.currentYear;
+    firstDay = Drupal.settings.roomsCalendar.firstDay;
 
     // The first month on the calendar
-    month1 = currentmonth;
-    year1 = currentyear;
+    month1 = currentMonth;
+    year1 = currentYear;
 
     // Second month is the next one obviously unless it is 11 in which case we need to move a year ahead
-    if (currentmonth == 11) {
+    if (currentMonth == 11) {
       month2 = 0;
       year2 = year1 + 1;
     }
     else{
-      month2 = currentmonth+1;
-      year2 = currentyear;
+      month2 = currentMonth+1;
+      year2 = currentYear;
     }
 
-    currentmonth = month2;
+    currentMonth = month2;
     // And finally the last month where we do the same as above worth streamlining this probably
-    if (currentmonth == 11) {
+    if (currentMonth == 11) {
       month3 = 0;
       year3 = year2 + 1;
     }
     else{
-      month3 = currentmonth+1;
+      month3 = currentMonth+1;
       year3 = year2;
     }
 
-    var calendars = new Array();
+    var calendars = [];
     calendars[0] = new Array('#calendar', month1, year1);
     calendars[1] = new Array('#calendar1', month2, year2);
     calendars[2] = new Array('#calendar2', month3, year3);
@@ -55,6 +56,9 @@ Drupal.behaviors.rooms_availability = {
         ignoreTimezone: false,
         editable: false,
         selectable: true,
+        dayNamesShort:[Drupal.t("Sun"), Drupal.t("Mon"), Drupal.t("Tue"), Drupal.t("Wed"), Drupal.t("Thu"), Drupal.t("Fri"), Drupal.t("Sat")],
+        monthNames:[Drupal.t("January"), Drupal.t("February"), Drupal.t("March"), Drupal.t("April"), Drupal.t("May"), Drupal.t("June"), Drupal.t("July"), Drupal.t("August"), Drupal.t("September"), Drupal.t("October"), Drupal.t("November"), Drupal.t("December")],
+        firstDay: firstDay,
         month: value[1],
         year: value[2],
         header:{
@@ -65,7 +69,7 @@ Drupal.behaviors.rooms_availability = {
         events: Drupal.settings.basePath + '?q=rooms/units/unit/' + Drupal.settings.roomsAvailability.roomID + '/availability/json/' + value[2] + '/' + phpmonth,
         eventClick: function(calEvent, jsEvent, view) {
           // Getting the Unix timestamp - JS will only give us milliseconds
-          if (calEvent.end == null) {
+          if (calEvent.end === null) {
             //We are probably dealing with a single day event
             calEvent.end = calEvent.start;
           }
@@ -100,11 +104,12 @@ Drupal.RoomsAvailability.Modal = function(element, eid, sd, ed) {
   var element_settings = {
     url : base + Drupal.settings.roomsAvailability.roomID + '/event/' + eid + '/' + sd + '/' + ed,
     event : 'getResponse',
-    progress : { type: 'throbber' },
+    progress : { type: 'throbber' }
   };
   // To made all calendars trigger correctly the getResponse event we need to
   // initialize the ajax instance with the global calendar table element.
-  var calendars_table = $(element.element).closest('table');
+  var calendars_table = $(element.element).closest('.calendar-set');
+
   // create new instance only once if exists just override the url
   if (Drupal.ajax[base] === undefined) {
     Drupal.ajax[base] = new Drupal.ajax(element_settings.url, calendars_table, element_settings);

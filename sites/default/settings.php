@@ -215,9 +215,9 @@ $databases = array (
   array (
     'default' => 
     array (
-      'database' => 'k4750231_villa',
-      'username' => 'k4750231_villa',
-      'password' => 'villa2013',
+      'database' => 'villa',
+      'username' => 'root',
+      'password' => '',
       'host' => 'localhost',
       'port' => '',
       'driver' => 'mysql',

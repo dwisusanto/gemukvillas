@@ -15,6 +15,10 @@ class RoomsBookingTypeUIController extends EntityDefaultUIController {
    */
   public function hook_menu() {
     $items = parent::hook_menu();
+    foreach ($items as &$item) {
+      unset($item['access callback']);
+      $item['access arguments'] = array('administer rooms_booking_type entities');
+    }
     $items[$this->path]['description'] = 'Manage booking types, including adding and removing fields and the display of fields.';
     $items[$this->path]['weight'] = '3';
     $items[$this->path]['type'] = MENU_LOCAL_TASK;
@@ -24,9 +28,10 @@ class RoomsBookingTypeUIController extends EntityDefaultUIController {
 
 /**
  * Generates the Booking type editing form.
- *
  */
 function rooms_booking_type_form($form, &$form_state, $booking_type, $op = 'edit') {
+
+  $form['#attributes']['class'][] = 'rooms-management-form rooms-booking-type-form';
 
   if ($op == 'clone') {
     $booking_type->label .= ' (cloned)';
@@ -53,9 +58,10 @@ function rooms_booking_type_form($form, &$form_state, $booking_type, $op = 'edit
     '#description' => t('A unique machine-readable name for this booking type. It must only contain lowercase letters, numbers, and underscores.'),
   );
 
-
-
-  $form['actions'] = array('#type' => 'actions');
+  $form['actions'] = array(
+    '#type' => 'actions',
+    '#tree' => FALSE,
+  );
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save Booking type'),
