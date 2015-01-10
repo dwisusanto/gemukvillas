@@ -258,6 +258,10 @@
         $('input[type=submit], button', this).click(function(event) {
           Drupal.ajax[base].element = this;
           this.form.clk = this;
+          // Stop autocomplete from submitting.
+          if (Drupal.autocompleteSubmit && !Drupal.autocompleteSubmit()) {
+            return false;
+          }
           // An empty event means we were triggered via .click() and
           // in jquery 1.4 this won't trigger a submit.
           if (event.bubbles == undefined) {
@@ -428,7 +432,7 @@
     $('body').bind( 'keypress', modalEventHandler );
 
     // Create our content div, get the dimensions, and hide it
-    var modalContent = $('#modalContent').css('top','-1000px');
+    var modalContent = $('#modalContent').css('top','100px');
     var mdcTop = wt + ( winHeight / 2 ) - (  modalContent.outerHeight() / 2);
     var mdcLeft = ( winWidth / 2 ) - ( modalContent.outerWidth() / 2);
     $('#modalBackdrop').css(css).css('top', 0).css('height', docHeight + 'px').css('width', docWidth + 'px').show();
